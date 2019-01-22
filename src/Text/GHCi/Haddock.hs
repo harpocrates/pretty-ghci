@@ -1,41 +1,74 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Text.GHCi.Haddock where
+module Text.GHCi.Haddock (
+  -- * Pretty-printing
+  prettyPrintHaddock, haddock2Doc,
+  HaddockPrintConf(..),
+  defaultHaddockConf,
 
+  -- * Formatting options
+  AnsiStyle,
+  -- ** Color
+  color, colorDull, bgColor, bgColorDull, Color(..),
+  -- ** Style
+  bold, italicized, underlined,
+) where
+
+-- base
+import Control.Monad (join)
+import Data.String   ( fromString )
+import Data.Void     ( Void, absurd )
+import Data.Char     ( isSpace )
+import Data.List     ( dropWhileEnd )
+import System.IO     ( Handle, stdout )
+
+-- haddock-library
 import Documentation.Haddock.Markup
 import Documentation.Haddock.Parser
 import Documentation.Haddock.Types
 
+-- prettyprinter, prettyprinter-ansi-terminal
 import Data.Text.Prettyprint.Doc
-
 import Data.Text.Prettyprint.Doc.Render.Terminal
 
-import Data.String
-import Data.Void
-import Data.Char (isSpace)
-import Control.Monad (join)
+-- | Given a Haddock-formatted docstring, format and print that docstring to
+-- the terminal.
+prettyPrintHaddock :: String -> IO ()
+prettyPrintHaddock = putDoc . haddock2Doc 
 
-printDoc :: String -> IO ()
-printDoc = putDoc . renderDocH defaultHaddockPrintConf . _doc . parseParas Nothing
+-- | Like 'prettyPrintDoc', but prints to an arbitrary 'Handle' insead of
+-- 'stdout'.
+haddock2Doc :: String -> Doc AnsiStyle
+haddock2Doc doc = (blocksToDoc blks <> hardline)
+  where
+    MetaDoc { _doc = parsedDoc } = parseParas Nothing doc
+    blks = getAsBlocks $ markup (terminalMarkup defaultHaddockConf) parsedDoc
 
 
-defaultHaddockPrintConf :: HaddockPrintConf
-defaultHaddockPrintConf = HaddockPrintConf
-  { hpc_emphasis = italicized
-  , hpc_bold = bold
-  , hpc_monospaced = color Magenta 
-  , hpc_header = color White 
+-- | A Good Enough colour scheme
+defaultHaddockConf :: HaddockPrintConf
+defaultHaddockConf = HaddockPrintConf
+  { hpc_default    = mempty
+  , hpc_emphasis   = italicized
+  , hpc_bold       = bold
+  , hpc_monospaced = colorDull Magenta
+  , hpc_header     = bold <> underlined <> color White
   , hpc_identifier = underlined <> color Magenta
-  , hpc_math = color Green
-  , hpc_links = underlined <> color White 
-  , hpc_control = color Red
+  , hpc_math       = italicized <> color Green
+  , hpc_links      = underlined <> color Blue
+  , hpc_warning    = italicized <> color Red
+  , hpc_control    = bold <> colorDull Yellow
   }
 
+-- | Options for how to colour the terminal output
 data HaddockPrintConf = HaddockPrintConf
-  { hpc_emphasis :: AnsiStyle
+  { hpc_default :: AnsiStyle
+  -- ^ the default background
+
+  , hpc_emphasis :: AnsiStyle
   -- ^ emphasized text
 
   , hpc_bold :: AnsiStyle
-  -- ^ bold test
+  -- ^ bold text
 
   , hpc_monospaced :: AnsiStyle
   -- ^ code blocks and inline code
@@ -51,212 +84,136 @@ data HaddockPrintConf = HaddockPrintConf
   
   , hpc_links :: AnsiStyle
   -- ^ the link part of hyperlinks or images
-  
+
+  , hpc_warning :: AnsiStyle
+  -- ^ warning texts
+
   , hpc_control :: AnsiStyle
   -- ^ things like: equals in headers, bullets in lists, etc.
   }
 
-renderDocH
-  :: HaddockPrintConf
-  -> DocH Void Identifier
-  -> Doc AnsiStyle
-renderDocH hpc = annotate (color Green) . (<> hardline) . vcat . punctuate hardline . renderBlocks
+
+type ReflowSpaces = Bool
+
+-- | The main complexity with turning Haddock's 'DocH' into a
+-- @'Doc' 'AnsiStyle'@ is that there is often a conflation of
+-- inline and block-level elements.
+--
+-- We cheat by choosing a worker which tries both at once.
+data RenderedDocH = RDH
+  { getAsBlocks :: [Doc AnsiStyle]               -- ^ render as blocks
+  , getAsInline :: ReflowSpaces -> Doc AnsiStyle -- ^ render as inline
+  }
+
+-- | Concatenate a bunch of blocks vertically with empty lines between blocks
+blocksToDoc :: [Doc AnsiStyle] -> Doc AnsiStyle
+blocksToDoc = align . vcat . punctuate hardline
+
+-- | Markup for turning a 'DocH' into a 'RenderedDocH'
+terminalMarkup :: HaddockPrintConf -> DocMarkupH Void Identifier RenderedDocH
+terminalMarkup hpc = Markup
+  { markupEmpty = RDH { getAsBlocks = []
+                      , getAsInline = mempty }
+
+  -- This is where reflow spaces matters: we only split the string into words
+  -- and glue those words back together if we have the go-ahead to reflow.
+  , markupString = \str -> onlyInline $ \reflowSpaces -> case str of
+      "" -> mempty
+      _  | reflowSpaces
+         -> let headSpace = if isSpace (head str) then space else mempty
+                lastSpace = if isSpace (last str) then space else mempty
+             in headSpace <> fillSep (map fromString (words str)) <> lastSpace
+         | otherwise
+         -> fromString (dropWhileEnd (== '\n') str)
+
+  , markupParagraph = \doc -> onlyBlock (getAsInline doc True)
+
+  , markupAppend = \(RDH b1 i1) (RDH b2 i2) -> RDH (b1 ++ b2) (i1 <> i2)
+
+  , markupIdentifier = \(_,idnt,_) -> onlyInline $ \_ -> ident (fromString idnt)
+  , markupModule     = \mdl        -> onlyInline $ \_ -> ident (fromString mdl)
+  , markupAName      = \anc        -> onlyInline $ \_ -> ident (fromString anc)
+
+  , markupIdentifierUnchecked = absurd
+
+  , markupEmphasis   = \doc        -> onlyInline (emph   . getAsInline doc)
+  , markupBold       = \doc        -> onlyInline (bolded . getAsInline doc)
+  , markupMonospaced = \doc        -> onlyInline (mono   . getAsInline doc)
+    
+  , markupWarning = \doc ->
+      onlyBlock (warn (getAsInline doc True))
+
+  , markupUnorderedList = \docs ->
+      onlyBlock (renderListLike (repeat "*")
+                                (map (blocksToDoc . getAsBlocks) docs))
+
+  , markupOrderedList = \docs ->
+      onlyBlock (renderListLike [ unsafeViaShow i <> "." | i <- [1 :: Int ..] ]
+                                (map (blocksToDoc . getAsBlocks) docs))
+
+  , markupDefList = \lblDocs -> let (lbls, docs) = unzip lblDocs in
+      onlyBlock (renderListLike [ ctrl (getAsInline l True <> ":") <> hardline | l <- lbls ]
+                                (map (\doc -> align (getAsInline doc False)) docs))
+
+  -- Render markdown-style only when we have a title
+  , markupHyperlink = \(Hyperlink uri titleOpt) -> onlyInline $ \_ -> case titleOpt of
+      Nothing    -> ctrl "<" <> link (fromString uri) <> ctrl ">"
+      Just title -> ctrl "[" <> fromString title <> ctrl "](" <> link (fromString uri) <> ctrl ")"
+
+  -- Render markdown-style only when we have a title
+  , markupPic = \(Picture uri titleOpt) -> onlyInline $ \_ -> case titleOpt of
+      Nothing    -> ctrl "<<" <> link (fromString uri) <> ctrl ">>"
+      Just title -> ctrl "![" <> fromString title <> ctrl "](" <> link (fromString uri) <> ctrl ")"
+
+  , markupMathInline = \tex -> onlyInline $ \_ ->
+      math ("\\(" <+> fillSep (map fromString (words tex)) <+> "\\)")
+
+  , markupMathDisplay = \tex -> onlyBlock (math ("\\[" <> fromString tex <> "\\]"))
+
+  , markupProperty = \prop -> onlyBlock (ctrl "prop>" <> fromString prop)
+
+  , markupHeader = \(Header lvl title) -> let leader = ctrl (fromString (replicate lvl '=')) in
+      onlyBlock (leader <+> header (getAsInline title True))
+
+  -- TODO: figure out a good way to render this
+  , markupTable = \_ -> onlyBlock (bad "<table could not be rendered>")
+
+  , markupExample = \examples -> onlyBlock . vcat . join $
+      [ (ctrl ">>>" <+> fromString input) : (map (mono . fromString) output)
+      | Example input output <- examples ]
+
+  -- This is where we ask for an inline block with spaces /not/ reflowed
+  , markupCodeBlock = \doc -> RDH { getAsBlocks = [mono (getAsInline doc False)]
+                                  , getAsInline = \_ -> mono (getAsInline doc True) }
+  }
   where
-  blocksToDoc :: [Doc AnsiStyle] -> Doc AnsiStyle
-  blocksToDoc = align . vcat . punctuate hardline
+    -- This element is really and inline one, so interpretting it as a block
+    -- is a best effort.
+    onlyInline :: (ReflowSpaces -> Doc AnsiStyle) -> RenderedDocH
+    onlyInline renderInline = RDH { getAsBlocks = [renderInline False]
+                                  , getAsInline = renderInline }
 
-  renderBlocks b = case b of
-    DocEmpty -> []
-    DocAppend d1 d2 -> renderBlocks d1 ++ renderBlocks d2
-    
-    DocParagraph p -> [renderInline p False]
-    DocWarning d -> [annotate (italicized <> color Red) (renderInline d False)] 
-    DocMathDisplay s -> [math ("\\[" <> fromString s <> "\\]")]
+    -- This element is really a block one, so interpretting it as inline is a
+    -- best effort.
+    onlyBlock :: Doc AnsiStyle -> RenderedDocH
+    onlyBlock renderBlock   = RDH { getAsBlocks = [renderBlock]
+                                  , getAsInline = \_ -> align renderBlock }
 
-    DocUnorderedList ds -> renderListLike (repeat "*")                        ds 
-    DocOrderedList   ds -> renderListLike [ fromString (show i) <> "." 
-                                          | i <- [1 ..] ] ds
-   
-    DocDefList ds -> pure $ blocksToDoc $
-      [ link lbl' <> ctrl ":" <> hardline <> indent 4 d'
-      | (lbl, d) <- ds
-      , let lbl' = renderInline lbl False
-      , let d' = renderInline d False -- blocksToDoc (renderBlocks d)
-      ]
-    
-    DocHeader (Header lvl title) ->
-      let equals = ctrl (fromString (replicate lvl '='))
-      in [equals <+> annotate (hpc_header hpc) (renderInline title False)]
-    DocTable _ -> error "todo"
-    
-    DocCodeBlock d -> [annotate (color White) $ mono (vcat [ "@", renderInline d True, "@" ])]
+    -- Given what the bullets look like and elements associated with the
+    -- bullets, produce the doc.
+    renderListLike :: [Doc AnsiStyle] -> [Doc AnsiStyle] -> Doc AnsiStyle
+    renderListLike ixs docs = indent 2 . blocksToDoc $
+      [ ctrl ix <+> doc | (ix,doc) <- ixs `zip` docs ]
 
-    -- This shouldn't happen. If it does, interpreting the inline markup as
-    -- one block seems reasonable
-    i -> [renderInline i False]
+    -- Useful annotations
+    header = annotate (hpc_header     hpc)
+    emph   = annotate (hpc_emphasis   hpc)
+    bolded = annotate (hpc_bold       hpc)
+    ctrl   = annotate (hpc_control    hpc)
+    link   = annotate (hpc_links      hpc)
+    math   = annotate (hpc_math       hpc)
+    mono   = annotate (hpc_monospaced hpc)
+    ident  = annotate (hpc_identifier hpc)
+    warn   = annotate (hpc_warning    hpc)
+    bad    = annotate (color Red <> bold <> bgColor White)
 
-  -- Second argument being true means "don't reflow my spaces!"
-  renderInline i sp = case i of
-    DocEmpty -> mempty
-    DocAppend d1 d2 -> renderInline d1 sp <> renderInline d2 sp
-    
-    DocString "" -> mempty
-    DocString s
-      | not sp  -> let headSpace = if isSpace (head s) then space else mempty
-                       lastSpace = if isSpace (last s) then space else mempty
-                   in headSpace <> fillSep (map fromString (words s)) <> lastSpace
-      | otherwise -> fromString s
-    
-    DocIdentifier (_,ident,_) -> annotate (hpc_identifier hpc) (fromString ident)
-    DocModule     mdl         -> annotate (hpc_identifier hpc) (fromString mdl)
-    DocAName      anc         -> annotate (hpc_identifier hpc) (fromString anc)
-    DocIdentifierUnchecked v  -> absurd v
-    
-    DocEmphasis   d -> annotate (hpc_emphasis hpc) (renderInline d sp)
-    DocMonospaced d -> mono ("@" <> renderInline d sp <> "@")
-    DocBold       d -> annotate (hpc_bold hpc) (renderInline d sp)
-
-    DocMathInline s -> math ("\\(" <+> fillSep (map fromString (words s)) <+> "\\)")
-    
-    DocCodeBlock d -> mono ("@" <> renderInline d sp <> "@")
-    
-    DocHyperlink (Hyperlink uri Nothing) -> ctrl "<" <> link (fromString uri) <> ctrl ">"
-    DocHyperlink (Hyperlink uri (Just d)) ->
-      mconcat [ ctrl "["
-              , fromString d -- renderInline d 
-              , ctrl "]("
-              , link (fromString uri)
-              , ctrl ")" ]
-      
-    DocPic (Picture uri Nothing) -> ctrl "<<" <> link (fromString uri) <> ctrl ">>"
-    DocPic (Picture uri (Just s)) ->
-      mconcat [ ctrl "!["
-              , fromString s 
-              , ctrl "]("
-              , link (fromString uri)
-              , ctrl ")" ]
-    
-    DocProperty s -> ctrl "prop>" <> fromString s
-    DocExamples exs -> vcat (join [ (ctrl ">>>" <+> fromString exp) :
-                                    (map (mono . fromString) out)
-                                  | Example exp out <- exs ])
-
-    -- This shouldn't happen. If it does, interpreting and flattening the block
-    -- markup seems reasonable
-    d -> blocksToDoc (renderBlocks d)
-
-  renderListLike ixs ds =
-    let bs = map (blocksToDoc . renderBlocks) ds
-        bs' = zipWith (\ix d -> annotate (hpc_control hpc) ix <+> d) ixs bs
-    in [ indent 4 (blocksToDoc bs') ]
-
-
-  ctrl = annotate (hpc_control hpc)
-  link = annotate (hpc_links hpc)
-  math = annotate (hpc_math hpc)
-  mono = annotate (hpc_monospaced hpc)
-
-sampleDoc1 = unlines $
-  [ "Hellow world this is a really [google](www.google.com) really really long paragraph which is just not ever end \\(1 + 2 \\) at allllllllllllllllll like ever ever"
-  , ""
-  , "  * bullet 1"
-  , "  * bullet 2"
-  , "  * bullet 3"
-  , "  * bullet 4"
-  , ""
-  , "and then..."
-  ]
-
-sampleDoc2 = unlines $
-  [ "= The best section"
-  , ""
-  , "Hellow world this is a really really really long paragraph which is just not ever end at allllllllllllllllll like ever ever"
-  , ""
-  , "  * bullet 1"
-  , "  * bullet 2 which is sort of never /ending/ like ever e ever e ever e ever e ever e ever e ever e ever e ever e ever e ever  "
-  , "    bullet 2 which is sort of never ending like ever e ever e ever e ever e ever e ever e ever e ever e ever e ever e ever  "
-  , ""
-  , "        - subpoint 1"
-  , "        - subpoint 2"
-  , ""
-  , "      bullet 2 which is sort of never ending like ever e ever e ever e ever e ever e ever e ever e ever e ever e ever e ever  "
-  , "      bullet 2 which is sort of never ending like ever e ever e ever e ever e ever e ever e ever e ever e ever e ever e ever  "
-  , ""
-  , "  * bullet 3"
-  , ""
-  , "      >>> f x"
-  , "      SomeConstructor [1,2,3]"
-  , "      >>> f x y z"
-  , "      SomeConstructor {"
-  , "        x = 019343298472"
-  , "        y = fdsifsiudfyoisudf"
-  , "      }"
-  , ""
-  , "      @"
-  , "      fib 0 = 0"
-  , "      fib 1 = 1"
-  , "      fib n = 'fib' (n-1) + fib (n-2)"
-  , "      @"
-  , ""
-  , "      or"
-  , ""
-  , "      > fib 0 = 0"
-  , "      > fib 1 = 1"
-  , "      > fib n = fib (n-1) + fib (n-2)"
-  , ""
-  , "  * bullet 4"
-  , ""
-  , "and then..."
-  , ""
-  , "@"
-  , "fib 0 = 0"
-  , "fib 1 = 1"
-  , "fib n = 'fib' (n-1) + fib (n-2)"
-  , "@"
-  , ""
-  , "or"
-  , ""
-  , "> fib 0 = 0"
-  , "> fib 1 = 1"
-  , "> fib n = fib (n-1) + fib (n-2)"
-  , ""
-  , "=== HEADER 2"
-  , ""
-  , "\\["
-  , "\\int_0^\\infty e^{-x^2} dx"
-  , "\\]"
-  , ""
-  , "And here is an example:"
-  , ""
-  , ">>> f x"
-  , "SomeConstructor [1,2,3]"
-  , ">>> f x y z"
-  , "SomeConstructor {"
-  , "  x = 019343298472"
-  , "  y = fdsifsiudfyoisudf"
-  , "}"
-  ]
-
-sampleDoc3 = unlines $
-  [ "The 'Eq' class defines equality ('==') and inequality ('/=')."
-  , "All the basic datatypes exported by the \"Prelude\" are instances of 'Eq',"
-  , "and 'Eq' may be derived for any datatype whose constituents are also"
-  , "instances of 'Eq'."
-  , ""
-  , "The Haskell Report defines no laws for 'Eq'. However, '==' is customarily"
-  , "expected to implement an equivalence relationship where two values comparing"
-  , "equal are indistinguishable by \"public\" functions, with a \"public\" function"
-  , "being one not allowing to see implementation details. For example, for a"
-  , "type representing non-normalised natural numbers modulo 100, a \"public\""
-  , "function doesn't make the difference between 1 and 201. It is expected to"
-  , "have the following properties:"
-  , ""
-  , "[__Reflexivity__]: @x '==' x@ = 'True'"
-  , "[__Symmetry__]: @x == y@ = @y == x@"
-  , "[__Transitivity__]: if @x == y && y == z@ = 'True', then @x == z@ = 'True'"
-  , "[__Substitutivity__]: if @x == y@ = 'True' and @f@ is a \"public\" function"
-  , "whose return type is an instance of 'Eq', then @f x == f y@ = 'True'"
-  , "[__Negation__]: @x /= y@ = @not (x == y)@"
-  , ""
-  , "Minimal complete definition: either '==' or '/='."
-  ]
