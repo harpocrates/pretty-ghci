@@ -1,10 +1,10 @@
 {
-module Text.GHCi.Value.Parser (
+module Text.PrettyPrint.GHCi.Value.Parser (
   parseValue,
   Value(..),
 ) where
 
-import Text.GHCi.Value.Lexer
+import Text.PrettyPrint.GHCi.Value.Lexer
 }
 
 %name parseTokens value 

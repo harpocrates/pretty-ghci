@@ -1,5 +1,5 @@
 {
-module Text.GHCi.Value.Lexer (
+module Text.PrettyPrint.GHCi.Value.Lexer (
   lexTokens,
   Token(..),
 ) where

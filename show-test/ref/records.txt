@@ -1,0 +1,11 @@
+BigFactoryCabalRecord
+  { bfcr_hash = 0x123987
+  , bfcr_name = Just "some big package"
+  , (+*&^) = 42
+  , bfcr_version = mkVersion [0, 1, 0, 0]
+  , bfcr_changelog = [ SubRecord1 Nothing Nothing Nothing
+                     , SubRecord1
+                         { date = Just (Date 9999)
+                         , reason = Nothing
+                         , compatibility = Just None } ]
+  , bfcr_small = Point { x = 99, y = 109 } }

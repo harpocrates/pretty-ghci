@@ -1,20 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Text.GHCi.Value (
-  -- * Pretty-printing
+module Text.PrettyPrint.GHCi.Value (
   prettyPrintValue, value2Doc,
   ValuePrintConf(..),
   defaultValueConf,
-
-  -- * Formatting options
-  AnsiStyle,
-  -- ** Color
-  color, colorDull, bgColor, bgColorDull, Color(..),
-  -- ** Style
-  bold, italicized, underlined,
 ) where
 
-import Text.GHCi.Value.Parser
+import Text.PrettyPrint.GHCi.Value.Parser
 
 -- base
 import Data.String       ( fromString )

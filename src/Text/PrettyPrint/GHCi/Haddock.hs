@@ -1,16 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Text.GHCi.Haddock (
-  -- * Pretty-printing
+module Text.PrettyPrint.GHCi.Haddock (
   prettyPrintHaddock, haddock2Doc,
   HaddockPrintConf(..),
   defaultHaddockConf,
-
-  -- * Formatting options
-  AnsiStyle,
-  -- ** Color
-  color, colorDull, bgColor, bgColorDull, Color(..),
-  -- ** Style
-  bold, italicized, underlined,
 ) where
 
 -- base

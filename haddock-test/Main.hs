@@ -1,15 +1,18 @@
 module Main where
 
-import Text.GHCi.Haddock
+import Text.PrettyPrint.GHCi.Haddock
+
 import Data.Text.Prettyprint.Doc
-import System.Directory (listDirectory, createDirectoryIfMissing, findExecutable)
-import Data.Foldable (for_)
-import System.FilePath ((</>), takeFileName)
-import System.Process (callProcess)
 import Data.Text.Prettyprint.Doc.Render.String (renderString)
+
+import Data.Foldable           ( for_ )
+import Data.Maybe              ( catMaybes )
 import System.Console.GetOpt
-import System.Environment (getArgs)
-import Data.Maybe (catMaybes)
+import System.Directory        ( listDirectory, createDirectoryIfMissing, findExecutable )
+import System.Environment      ( getArgs )
+import System.FilePath         ( (</>), takeFileName )
+import System.Process          ( callProcess )
+
 
 -- | Option parser
 options :: [OptDescr Opt]
