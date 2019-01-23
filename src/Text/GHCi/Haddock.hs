@@ -35,8 +35,8 @@ import Data.Text.Prettyprint.Doc.Render.Terminal
 prettyPrintHaddock :: String -> IO ()
 prettyPrintHaddock = putDoc . haddock2Doc 
 
--- | Like 'prettyPrintDoc', but prints to an arbitrary 'Handle' insead of
--- 'stdout'.
+-- | Parse a docstring into a pretty 'Doc'. Should never throw an exception
+-- (since @haddock-library@ will parse /something/ out of any input).
 haddock2Doc :: String -> Doc AnsiStyle
 haddock2Doc doc = (blocksToDoc blks <> hardline)
   where
