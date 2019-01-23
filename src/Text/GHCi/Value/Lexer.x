@@ -4,7 +4,6 @@ module Text.GHCi.Value.Lexer (
   Token(..),
 ) where
 
-import Control.Monad ( join )
 import Data.Char     ( generalCategory, GeneralCategory(..) )
 }
 
@@ -63,31 +62,31 @@ tokens :-
 
     $white+        ;
     
-    "("            { const [OpenParen] }
-    ")"            { const [CloseParen] }
+    "("            { const OpenParen }
+    ")"            { const CloseParen }
     
-    "["            { const [OpenBracket] }
-    "]"            { const [CloseBracket] }
+    "["            { const OpenBracket }
+    "]"            { const CloseBracket }
     
-    "{"            { const [OpenBrace] }
-    "}"            { const [CloseBrace] }
+    "{"            { const OpenBrace }
+    "}"            { const CloseBrace }
     
-    ","            { const [Comma] }
-    "="            { const [Equal] }
+    ","            { const Comma }
+    "="            { const Equal }
    
-    @decimal       { pure . NumberTok }
-    @number        { pure . NumberTok }
-    @character     { pure . CharacterTok }
-    @string        { pure . StringTok }
+    @decimal       { NumberTok }
+    @number        { NumberTok }
+    @character     { CharacterTok }
+    @string        { StringTok }
     
-    @sym_op        { operatorsAndSymbols }
+    @sym_op        { operatorOrSymbol }
 
 {
 
 -- | Turn a 'String' into a list of 'Token'. This may error out for
 -- particularly bad inputs (ex: unclosed string).
 lexTokens :: String -> [Token]
-lexTokens = join . alexScanTokens
+lexTokens = alexScanTokens
 
 -- | Our somewhat simplified version of GHC Haskell tokens 
 data Token
@@ -95,7 +94,9 @@ data Token
   | StringTok     String
   | CharacterTok  String
   | OperatorTok   String
-  | IdentifierTok String
+  | IdentifierTok String  -- ^ we're overly liberal with what can be an
+                          -- identifier (so as to accomodate custom 'Show'
+                          -- instances)
   | OpenParen
   | CloseParen
   | OpenBracket
@@ -106,18 +107,11 @@ data Token
   | Equal
   deriving (Eq, Show)
 
--- | Split a string into a list of operators and identifiers
-operatorsAndSymbols :: String -> [Token]
-operatorsAndSymbols "" = []
-operatorsAndSymbols (c:str)
-  | isOperatorLike c
-  , (op, rest) <- span isOperatorLike str
-  = OperatorTok (c:op) : operatorsAndSymbols rest
-  | otherwise
-  , (ident, rest) <- span (not . isOperatorLike) str
-  = case rest of
-      '#':rest' -> IdentifierTok (c : ident ++ "#") : operatorsAndSymbols rest'
-      _         -> IdentifierTok (c : ident       ) : operatorsAndSymbols rest
+-- | Classify a string as either an operator or an identifier 
+operatorOrSymbol :: String -> Token
+operatorOrSymbol str
+  | all isOperatorLike str = OperatorTok str
+  | otherwise              = IdentifierTok str
 
 -- | Characters in these categories can be part of operators
 isOperatorLike :: Char -> Bool

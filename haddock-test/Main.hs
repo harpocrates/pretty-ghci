@@ -40,6 +40,7 @@ main = do
   
   -- Run them in a loop
   for_ srcs $ \srcFile -> do
+    putStrLn $ "Checking " ++ srcFile ++ "..."
 
     let ref = "haddock-test" </> "ref" </> srcFile
         out = "haddock-test" </> "out" </> srcFile

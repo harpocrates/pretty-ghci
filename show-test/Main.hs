@@ -40,6 +40,7 @@ main = do
   
   -- Run them in a loop
   for_ srcs $ \srcFile -> do
+    putStrLn $ "Checking " ++ srcFile ++ "..."
 
     let ref = "show-test" </> "ref" </> srcFile
         out = "show-test" </> "out" </> srcFile

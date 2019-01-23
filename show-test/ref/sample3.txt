@@ -1,1 +1,133 @@
-
+MetaDoc
+  { _meta = Meta { _version = Nothing, _package = Nothing }
+  , _doc = DocAppend
+             (DocParagraph
+                (DocAppend
+                   (DocString "The ")
+                   (DocAppend
+                      (DocIdentifier ('\'', "Eq", '\''))
+                      (DocAppend
+                         (DocString " class defines equality (")
+                         (DocAppend
+                            (DocIdentifier ('\'', "==", '\''))
+                            (DocAppend
+                               (DocString ") and inequality (")
+                               (DocAppend
+                                  (DocIdentifier ('\'', "/=", '\''))
+                                  (DocAppend
+                                     (DocString
+                                        ").\nAll the basic datatypes exported by the ")
+                                     (DocAppend
+                                        (DocModule "Prelude")
+                                        (DocAppend
+                                           (DocString " are instances of ")
+                                           (DocAppend
+                                              (DocIdentifier ('\'', "Eq", '\''))
+                                              (DocAppend
+                                                 (DocString ",\nand ")
+                                                 (DocAppend
+                                                    (DocIdentifier
+                                                       ('\'', "Eq", '\''))
+                                                    (DocAppend
+                                                       (DocString
+                                                          " may be derived for any datatype whose constituents are also\ninstances of ")
+                                                       (DocAppend
+                                                          (DocIdentifier
+                                                             ('\'', "Eq", '\''))
+                                                          (DocString
+                                                             "."))))))))))))))))
+             (DocAppend
+                (DocParagraph
+                   (DocAppend
+                      (DocString "The Haskell Report defines no laws for ")
+                      (DocAppend
+                         (DocIdentifier ('\'', "Eq", '\''))
+                         (DocAppend
+                            (DocString ". However, ")
+                            (DocAppend
+                               (DocIdentifier ('\'', "==", '\''))
+                               (DocString
+                                  " is customarily\nexpected to implement an equivalence relationship where two values comparing\nequal are indistinguishable by \"public\" functions, with a \"public\" function\nbeing one not allowing to see implementation details. For example, for a\ntype representing non-normalised natural numbers modulo 100, a \"public\"\nfunction doesn't make the difference between 1 and 201. It is expected to\nhave the following properties:"))))))
+                (DocAppend
+                   (DocDefList
+                      [ ( DocBold (DocString "Reflexivity")
+                        , DocAppend
+                            (DocMonospaced
+                               (DocAppend
+                                  (DocString "x ")
+                                  (DocAppend
+                                     (DocIdentifier ('\'', "==", '\''))
+                                     (DocString " x"))))
+                            (DocAppend
+                               (DocString " = ")
+                               (DocIdentifier ('\'', "True", '\''))) )
+                      , ( DocBold (DocString "Symmetry")
+                        , DocAppend
+                            (DocMonospaced (DocString "x == y"))
+                            (DocAppend
+                               (DocString " = ")
+                               (DocMonospaced (DocString "y == x"))) )
+                      , ( DocBold (DocString "Transitivity")
+                        , DocAppend
+                            (DocString "if ")
+                            (DocAppend
+                               (DocMonospaced (DocString "x == y && y == z"))
+                               (DocAppend
+                                  (DocString " = ")
+                                  (DocAppend
+                                     (DocIdentifier ('\'', "True", '\''))
+                                     (DocAppend
+                                        (DocString ", then ")
+                                        (DocAppend
+                                           (DocMonospaced (DocString "x == z"))
+                                           (DocAppend
+                                              (DocString " = ")
+                                              (DocIdentifier
+                                                 ('\'', "True", '\'')))))))) )
+                      , ( DocBold (DocString "Substitutivity")
+                        , DocAppend
+                            (DocString "if ")
+                            (DocAppend
+                               (DocMonospaced (DocString "x == y"))
+                               (DocAppend
+                                  (DocString " = ")
+                                  (DocAppend
+                                     (DocIdentifier ('\'', "True", '\''))
+                                     (DocAppend
+                                        (DocString " and ")
+                                        (DocAppend
+                                           (DocMonospaced (DocString "f"))
+                                           (DocAppend
+                                              (DocString
+                                                 " is a \"public\" function\nwhose return type is an instance of ")
+                                              (DocAppend
+                                                 (DocIdentifier
+                                                    ('\'', "Eq", '\''))
+                                                 (DocAppend
+                                                    (DocString ", then ")
+                                                    (DocAppend
+                                                       (DocMonospaced
+                                                          (DocString
+                                                             "f x == f y"))
+                                                       (DocAppend
+                                                          (DocString " = ")
+                                                          (DocIdentifier
+                                                             ( '\''
+                                                             , "True"
+                                                             , '\'' )))))))))))) )
+                      , ( DocBold (DocString "Negation")
+                        , DocAppend
+                            (DocMonospaced (DocString "x /= y"))
+                            (DocAppend
+                               (DocString " = ")
+                               (DocMonospaced (DocString "not (x == y)"))) ) ])
+                   (DocParagraph
+                      (DocAppend
+                         (DocString "Minimal complete definition: either ")
+                         (DocAppend
+                            (DocIdentifier ('\'', "==", '\''))
+                            (DocAppend
+                               (DocString " or ")
+                               (DocAppend
+                                  (DocIdentifier ('\'', "/=", '\''))
+                                  (DocString ".")))))))) }

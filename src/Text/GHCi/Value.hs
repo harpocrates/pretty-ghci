@@ -1,6 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Text.GHCi.Value where
+module Text.GHCi.Value (
+  -- * Pretty-printing
+  prettyPrintValue, value2Doc,
+  ValuePrintConf(..),
+  defaultValueConf,
+
+  -- * Formatting options
+  AnsiStyle,
+  -- ** Color
+  color, colorDull, bgColor, bgColorDull, Color(..),
+  -- ** Style
+  bold, italicized, underlined,
+) where
 
 import Text.GHCi.Value.Parser
 
@@ -12,9 +24,9 @@ import Control.Exception ( catch, ErrorCall )
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal
 
--- | Given a Haddock-formatted docstring, format and print that docstring to
--- the terminal. If a structured value cannot be parsed out, this falls back on
--- 'print'.
+-- | Given a 'Show'-able value, print that value out to the terminal, add helpful
+-- indentation and colours whenever possible. If a structured value cannot be
+-- parsed out, this falls back on 'print'.
 prettyPrintValue :: Show a => a -> IO ()
 prettyPrintValue x = putDoc (value2Doc (show x)) `catch` \(_ :: ErrorCall) -> print x
 
@@ -30,12 +42,14 @@ value2Doc shown = renderValue defaultValueConf value <> hardline
 -- | A Good Enough colour scheme
 defaultValueConf :: ValuePrintConf
 defaultValueConf = ValuePrintConf
-  { vpc_number = color Magenta 
+  { vpc_number    = color Cyan 
   , vpc_character = color Blue
-  , vpc_string = color Green
-  , vpc_control = bold <> colorDull Magenta
-  , vpc_comma = color Yellow
-  , vpc_operator = color White
+  , vpc_string    = color Green
+  , vpc_control   = bold <> color Magenta
+  , vpc_comma     = color Yellow
+  , vpc_operator  = color White
+  , vpc_field     = italicized <> colorDull Red 
+  , vpc_indent    = 2
   }
 
 -- | Options for how to colour the terminal output
@@ -46,6 +60,8 @@ data ValuePrintConf = ValuePrintConf
   , vpc_control :: AnsiStyle   -- ^ various control characters (ex: parens)
   , vpc_comma :: AnsiStyle     -- ^ commas
   , vpc_operator :: AnsiStyle  -- ^ general operators
+  , vpc_field :: AnsiStyle     -- ^ field in a record
+  , vpc_indent :: Int          -- ^ how many spaces is one indent?
   }
 
 
@@ -54,7 +70,6 @@ renderValue :: ValuePrintConf -> Value -> Doc AnsiStyle
 renderValue vpc = renderVal
   where
     renderVal v = case v of
-      Skip -> mempty
 
       Num n -> num (fromString n)
       Char c -> char (fromString c)
@@ -67,21 +82,22 @@ renderValue vpc = renderVal
       -- start on a new line (with args indented)
       Prefix c [] -> fromString c
       Prefix c vs ->
-        let args = align (vsep (map (align . renderVal) vs))
-        in fromString c <> group (nest 2 (line <> args))
+        let args = map (align . renderVal) vs
+        in fromString c <> group (nest n (line <> align (vsep args)))
      
       -- Either everything goes on one line, or each argument gets its own
       -- line with operators at the beginning of the lines
       Infix arg0 ops ->
-        let tails = align (vsep (map (\(op,arg) -> optr (fromString op) <+> align (renderVal arg)) ops))
-        in renderVal arg0 <> group (nest 2 (line <> tails))
+        let tails = map (\(op,arg) -> optr (fromString op) <+> align (renderVal arg)) ops
+        in renderVal arg0 <> group (nest n (line <> align (vsep tails)))
 
       -- Either everything goes on one line or the constructor and fields each
       -- start on a new line (with fields indented)
       Record c vs ->
-        let fields = align (vcat (zipWith (\l (f,x) -> l <+> fromString f <+> ctrl "=" <+> align (renderVal x))
-                                          (ctrl "{" : repeat (ctrl ",")) vs))
-        in fromString c <> group (nest 2 (line <> fields <+> ctrl "}"))
+        let fields = zipWith (\l (f,x) -> hsep [ l, field (fromString f)
+                                               , ctrl "=", align (renderVal x) ])
+                             (ctrl "{" : repeat (ctrl ",")) vs
+        in fromString c <> group (nest n (line <> align (vcat fields) <+> ctrl "}"))
       
       Paren x -> ctrl "(" <> align (renderVal x) <> ctrl ")"
 
@@ -94,12 +110,15 @@ renderValue vpc = renderVal
         opn' = flatAlt (opn <> space) opn
         cls' = flatAlt (space <> cls) cls
 
+    n = vpc_indent vpc
+
     -- Useful annotations
-    num    = annotate (vpc_number vpc)
+    num    = annotate (vpc_number    vpc)
     char   = annotate (vpc_character vpc)
-    string = annotate (vpc_string vpc)
-    ctrl   = annotate (vpc_control vpc)
-    coma   = annotate (vpc_comma vpc)
-    optr   = annotate (vpc_operator vpc)
+    string = annotate (vpc_string    vpc)
+    ctrl   = annotate (vpc_control   vpc)
+    coma   = annotate (vpc_comma     vpc)
+    optr   = annotate (vpc_operator  vpc)
+    field  = annotate (vpc_field     vpc)
 
 

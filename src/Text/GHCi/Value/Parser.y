@@ -30,11 +30,12 @@ atom :: { Value }
     : number                           { Num   $1 }
     | string                           { Str   $1 }
     | character                        { Char  $1 }
+    | '(' ')'                          { Tuple [] }
     | '(' value comma_values ')'       { if null $3
                                            then Paren $2
                                            else Tuple ($2 : reverse $3) }
+    | '[' ']'                          { List [] }
     | '[' value comma_values ']'       { List ($2 : reverse $3) }
-    | error                            { Skip }
 
 -- Reversed list of values, each value being preceded by a comma
 comma_values :: { [Value] }
@@ -49,8 +50,9 @@ prefix :: { Value }
 
 -- Reversed arguments to a prefix constructor
 prefix_apps :: { [Value] }
-    : {- empty -}                      { []      }
-    | prefix_apps atom                 { $2 : $1 }
+    : {- empty -}                      { []                }
+    | prefix_apps atom                 { $2           : $1 }
+    | prefix_apps identifier           { Prefix $2 [] : $1 }
 
 -- A record field
 field :: { (Id, Value) }
@@ -99,7 +101,6 @@ data Value
   | Char String -- ^ character
   | Str String  -- ^ string
   | Paren Value
-  | Skip        -- ^ there was some error and we are trying to pretend it never happened
   deriving Show
 
 -- | Parse a value from a 'String'. Will throw an exception for inputs that
