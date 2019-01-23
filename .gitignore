@@ -1,6 +1,7 @@
 /dist/
 /dist-newstyle/
-/test/out/
+/haddock-test/out/
+/show-test/out/
 
 .cabal-sandbox
 .ghc.environment.*

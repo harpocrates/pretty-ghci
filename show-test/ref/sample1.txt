@@ -1,0 +1,3 @@
+( 1239187639817639817623981
+, [Just ("some looooooooooooong string", True), Nothing]
+, Point { xCoord = Int, yCoord = 99 } )

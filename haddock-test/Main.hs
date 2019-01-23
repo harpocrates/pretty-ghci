@@ -34,16 +34,16 @@ main = do
       | otherwise -> pure False
 
   -- Get the test cases
-  srcs <- listDirectory ("test" </> "src")
-  createDirectoryIfMissing True ("test" </> "out")
-  createDirectoryIfMissing True ("test" </> "ref")
+  srcs <- listDirectory ("haddock-test" </> "src")
+  createDirectoryIfMissing True ("haddock-test" </> "out")
+  createDirectoryIfMissing True ("haddock-test" </> "ref")
   
   -- Run them in a loop
   for_ srcs $ \srcFile -> do
 
-    let ref = "test" </> "ref" </> srcFile
-        out = "test" </> "out" </> srcFile
-        src = "test" </> "src" </> srcFile
+    let ref = "haddock-test" </> "ref" </> srcFile
+        out = "haddock-test" </> "out" </> srcFile
+        src = "haddock-test" </> "src" </> srcFile
 
     inp <- readFile src
     let output = renderString (layoutPretty defaultLayoutOptions (haddock2Doc inp))

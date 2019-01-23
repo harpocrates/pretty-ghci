@@ -36,7 +36,7 @@ library
   hs-source-dirs:      src
   default-language:    Haskell2010
 
-test-suite haddock-tests
+test-suite haddock-test
   type:                exitcode-stdio-1.0
   main-is:             Main.hs
 
@@ -47,6 +47,20 @@ test-suite haddock-tests
                      , directory
                      , process
 
-  hs-source-dirs:      test
+  hs-source-dirs:      haddock-test
   default-language:    Haskell2010
-  
+
+test-suite show-test
+  type:                exitcode-stdio-1.0
+  main-is:             Main.hs
+
+  build-depends:       pretty-ghci
+                     , base
+                     , prettyprinter
+                     , filepath
+                     , directory
+                     , process
+
+  hs-source-dirs:      show-test
+  default-language:    Haskell2010
+

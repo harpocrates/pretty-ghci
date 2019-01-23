@@ -1,0 +1,5 @@
+GiganticRecord {
+ gr_subrecord1 = SubRecord1 { foo = 98, baz = "hello", qux = 'x' },
+ gr_subrecord2 = [ SubRecord2 132 (4 + 5), SubRecord2 29384792387 / 329387423423 ],
+ gr_subrecord3 = AnotherHugeProduct 123987e98798 0x876 0b0101010 ( pi, e )
+}
