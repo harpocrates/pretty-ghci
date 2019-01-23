@@ -5,12 +5,7 @@ module Text.GHCi.Value where
 import Text.GHCi.Value.Parser
 
 -- base
-import Control.Monad (join)
-import Data.String   ( fromString )
-import Data.Void     ( Void, absurd )
-import Data.Char     ( isSpace )
-import Data.List     ( dropWhileEnd )
-import System.IO     ( Handle, stdout )
+import Data.String       ( fromString )
 import Control.Exception ( catch, ErrorCall )
 
 -- prettyprinter, prettyprinter-ansi-terminal
@@ -59,6 +54,8 @@ renderValue :: ValuePrintConf -> Value -> Doc AnsiStyle
 renderValue vpc = renderVal
   where
     renderVal v = case v of
+      Skip -> mempty
+
       Num n -> num (fromString n)
       Char c -> char (fromString c)
       Str s -> string (fromString s)
@@ -68,6 +65,7 @@ renderValue vpc = renderVal
       
       -- Either everything goes on one line or the constructor and args each
       -- start on a new line (with args indented)
+      Prefix c [] -> fromString c
       Prefix c vs ->
         let args = align (vsep (map (align . renderVal) vs))
         in fromString c <> group (nest 2 (line <> args))
@@ -81,19 +79,17 @@ renderValue vpc = renderVal
       -- Either everything goes on one line or the constructor and fields each
       -- start on a new line (with fields indented)
       Record c vs ->
-        let fields = align (vcat (zipWith (\l (f,v) -> l <+> fromString f <+> ctrl "=" <+> align (renderVal v))
+        let fields = align (vcat (zipWith (\l (f,x) -> l <+> fromString f <+> ctrl "=" <+> align (renderVal x))
                                           (ctrl "{" : repeat (ctrl ",")) vs))
         in fromString c <> group (nest 2 (line <> fields <+> ctrl "}"))
       
-      Paren v -> ctrl "(" <> align (renderVal v) <> ctrl ")"
+      Paren x -> ctrl "(" <> align (renderVal x) <> ctrl ")"
 
-      Other o -> fromString o
-      
     -- Haskell style formatting of sequence-like things, with the comma at the
     -- start of the line
     renderSeq :: Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle -> Doc AnsiStyle
     renderSeq opn [] cls = opn <> cls
-    renderSeq opn vs cls = align . group . encloseSep opn' cls' (comma ", ") $ vs
+    renderSeq opn vs cls = align . group . encloseSep opn' cls' (coma ", ") $ vs
       where
         opn' = flatAlt (opn <> space) opn
         cls' = flatAlt (space <> cls) cls
@@ -103,7 +99,7 @@ renderValue vpc = renderVal
     char   = annotate (vpc_character vpc)
     string = annotate (vpc_string vpc)
     ctrl   = annotate (vpc_control vpc)
-    comma  = annotate (vpc_comma vpc)
+    coma   = annotate (vpc_comma vpc)
     optr   = annotate (vpc_operator vpc)
 
 

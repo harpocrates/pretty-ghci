@@ -8,6 +8,7 @@ import Text.GHCi.Value.Lexer
 }
 
 %name parseTokens value 
+%expect 0
 %tokentype { Token }
 %token number     { NumberTok $$ }
        string     { StringTok $$ }
@@ -33,7 +34,7 @@ atom :: { Value }
                                            then Paren $2
                                            else Tuple ($2 : reverse $3) }
     | '[' value comma_values ']'       { List ($2 : reverse $3) }
-
+    | error                            { Skip }
 
 -- Reversed list of values, each value being preceded by a comma
 comma_values :: { [Value] }
@@ -98,7 +99,7 @@ data Value
   | Char String -- ^ character
   | Str String  -- ^ string
   | Paren Value
-  | Other String
+  | Skip        -- ^ there was some error and we are trying to pretend it never happened
   deriving Show
 
 -- | Parse a value from a 'String'. Will throw an exception for inputs that

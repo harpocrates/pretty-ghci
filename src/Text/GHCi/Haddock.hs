@@ -19,7 +19,6 @@ import Data.String   ( fromString )
 import Data.Void     ( Void, absurd )
 import Data.Char     ( isSpace )
 import Data.List     ( dropWhileEnd )
-import System.IO     ( Handle, stdout )
 
 -- haddock-library
 import Documentation.Haddock.Markup
