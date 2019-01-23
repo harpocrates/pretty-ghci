@@ -28,4 +28,4 @@ install:
   - cabal v2-configure --enable-tests
 
 script:
-  - cabal new-test
+  - cabal v2-test

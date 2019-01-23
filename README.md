@@ -1,4 +1,4 @@
-* `pretty-ghci`
+# `pretty-ghci` [![Build Status][0]][1]
 
 This library will make your GHCi experience colourful in 3 steps:
 
@@ -22,3 +22,6 @@ This library will make your GHCi experience colourful in 3 steps:
      ```
 
   3. Enjoy!
+
+[0]: https://travis-ci.org/harpocrates/pretty-ghci.svg?branch=master
+[1]: https://travis-ci.org/harpocrates/pretty-ghci
