@@ -5,12 +5,15 @@ module Text.PrettyPrint.GHCi.Haddock (
   defaultHaddockConf,
 ) where
 
+import System.Terminal.Utils
+
 -- base
 import Control.Monad (join)
 import Data.String   ( fromString )
 import Data.Void     ( Void, absurd )
 import Data.Char     ( isSpace )
 import Data.List     ( dropWhileEnd )
+import System.IO     ( stdout )
 
 -- haddock-library
 import Documentation.Haddock.Markup
@@ -23,8 +26,14 @@ import Data.Text.Prettyprint.Doc.Render.Terminal
 
 -- | Given a Haddock-formatted docstring, format and print that docstring to
 -- the terminal.
-prettyPrintHaddock :: String -> IO ()
-prettyPrintHaddock = putDoc . haddock2Doc 
+--
+-- The 'Bool' is to enable a slower but potentially smarter layout algorithm.
+prettyPrintHaddock :: Bool -> String -> IO ()
+prettyPrintHaddock smarter str = do
+  termSize <- getTerminalSize
+  let layoutOpts = LayoutOptions (AvailablePerLine (maybe 80 snd termSize) 1.0)
+      layoutAlgo = if smarter then layoutSmart else layoutPretty
+  renderIO stdout (layoutAlgo layoutOpts (haddock2Doc str))
 
 -- | Parse a docstring into a pretty 'Doc'. Should never throw an exception
 -- (since @haddock-library@ will parse /something/ out of any input).

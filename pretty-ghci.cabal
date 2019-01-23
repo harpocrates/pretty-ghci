@@ -18,6 +18,7 @@ library
                        Text.PrettyPrint.GHCi.Value
                        Text.PrettyPrint.GHCi.Value.Lexer
                        Text.PrettyPrint.GHCi.Value.Parser
+                       System.Terminal.Utils
 
   build-tools:         alex >=3.1
                      , happy >=1.19

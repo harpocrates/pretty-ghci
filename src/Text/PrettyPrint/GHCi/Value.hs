@@ -7,10 +7,12 @@ module Text.PrettyPrint.GHCi.Value (
 ) where
 
 import Text.PrettyPrint.GHCi.Value.Parser
+import System.Terminal.Utils
 
 -- base
 import Data.String       ( fromString )
 import Control.Exception ( catch, ErrorCall )
+import System.IO         ( stdout )
 
 -- prettyprinter, prettyprinter-ansi-terminal
 import Data.Text.Prettyprint.Doc
@@ -19,8 +21,14 @@ import Data.Text.Prettyprint.Doc.Render.Terminal
 -- | Given a 'Show'-able value, print that value out to the terminal, add helpful
 -- indentation and colours whenever possible. If a structured value cannot be
 -- parsed out, this falls back on 'print'.
-prettyPrintValue :: Show a => a -> IO ()
-prettyPrintValue x = putDoc (value2Doc (show x)) `catch` \(_ :: ErrorCall) -> print x
+--
+-- The 'Bool' is to enable a slower but potentially smarter layout algorithm.
+prettyPrintValue :: Show a => Bool -> a -> IO ()
+prettyPrintValue smarter x = do
+  termSize <- getTerminalSize
+  let layoutOpts = LayoutOptions (AvailablePerLine (maybe 80 snd termSize) 1.0)
+      layoutAlgo = if smarter then layoutSmart else layoutPretty
+  renderIO stdout (layoutAlgo layoutOpts (value2Doc (show x))) `catch` \(_ :: ErrorCall) -> print x
 
 -- | Parse a shown value into a pretty 'Doc'. Can throw an error on outputs
 -- that could not be parsed properly, but should not throw errors for inputs
@@ -63,7 +71,7 @@ renderValue vpc = renderVal
   where
     renderVal v = case v of
 
-      Num n -> num (fromString n)
+      Num i -> num (fromString i)
       Char c -> char (fromString c)
       Str s -> string (fromString s)
       

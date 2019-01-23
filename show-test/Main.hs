@@ -23,7 +23,7 @@ options = [ Option []    ["accept"] (NoArg Accept) "accept the output"
 data Opt = Accept | Help deriving Eq
 
 main = do
-  
+
   -- Command line args: do we want to accept or not?
   args <- getArgs
   let header = "Usage: show-test [OPTION...]"
