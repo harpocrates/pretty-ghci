@@ -60,7 +60,7 @@ $sym_op_char  = ~[ $white \[ \] \( \) \{ \} \, \" \' \= ]
 
 tokens :-
 
-    $white+        ;
+    $white+        { WhiteTok }
     
     "("            { const OpenParen }
     ")"            { const CloseParen }
@@ -90,7 +90,8 @@ lexTokens = alexScanTokens
 
 -- | Our somewhat simplified version of GHC Haskell tokens 
 data Token
-  = NumberTok     String
+  = WhiteTok      String
+  | NumberTok     String
   | StringTok     String
   | CharacterTok  String
   | OperatorTok   String

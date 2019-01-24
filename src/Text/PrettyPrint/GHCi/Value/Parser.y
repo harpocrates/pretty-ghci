@@ -7,7 +7,8 @@ module Text.PrettyPrint.GHCi.Value.Parser (
 import Text.PrettyPrint.GHCi.Value.Lexer
 }
 
-%name parseTokens value 
+%name parseTokens value
+%monad { Maybe } { (>>=) } { return }
 %expect 0
 %tokentype { Token }
 %token number     { NumberTok $$ }
@@ -81,8 +82,8 @@ value :: { Value }
 
 {
 -- | Throws an exception, not particularly helpful
-happyError :: [Token] -> a
-happyError _ = error "parse error"
+happyError :: [Token] -> Maybe a
+happyError _ = Nothing
 
 -- | A @conid@ or @varid@ (possibly ending in hashes, to account for @MagicHash@)
 type Id = String
@@ -103,8 +104,11 @@ data Value
   | Paren Value
   deriving Show
 
--- | Parse a value from a 'String'. Will throw an exception for inputs that
--- could not be parsed
-parseValue :: String -> Value
-parseValue = parseTokens . lexTokens
+-- | Parse a value from a 'String'. Returns 'Nothing' for inputs that
+-- could not be parsed.
+parseValue :: String -> Maybe Value
+parseValue = parseTokens . filter notWhite . lexTokens
+  where
+    notWhite (WhiteTok _) = False
+    notWhite _ = True
 }

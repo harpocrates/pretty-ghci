@@ -6,6 +6,7 @@ module Text.PrettyPrint.GHCi.Value (
   defaultValueConf,
 ) where
 
+import Text.PrettyPrint.GHCi.Value.Lexer
 import Text.PrettyPrint.GHCi.Value.Parser
 import System.Terminal.Utils
 
@@ -34,9 +35,11 @@ prettyPrintValue smarter x = do
 -- that could not be parsed properly, but should not throw errors for inputs
 -- which are the outputs of 'show' from derived 'Show' instances.
 value2Doc :: String -> Doc AnsiStyle
-value2Doc shown = renderValue defaultValueConf value <> hardline
+value2Doc shown = case parseValue shown of
+                    Just v -> renderValue defaultValueConf v <> hardline
+                    Nothing -> renderTokens defaultValueConf tokens <> hardline
   where
-    value = parseValue shown
+    tokens = lexTokens shown
 
 
 -- | A Good Enough colour scheme
@@ -96,7 +99,7 @@ renderValue vpc = renderVal
       Record c vs ->
         let fields = zipWith (\l (f,x) -> hsep [ l, field (fromString f)
                                                , ctrl "=", align (renderVal x) ])
-                             (ctrl "{" : repeat (ctrl ",")) vs
+                             (ctrl "{" : repeat (coma ",")) vs
         in fromString c <> group (nest n (line <> align (vcat fields) <+> ctrl "}"))
       
       Paren x -> ctrl "(" <> align (renderVal x) <> ctrl ")"
@@ -121,4 +124,43 @@ renderValue vpc = renderVal
     optr   = annotate (vpc_operator  vpc)
     field  = annotate (vpc_field     vpc)
 
+
+-- | Function for turning a list of 'Token's into a 'Doc'
+renderTokens :: ValuePrintConf -> [Token] -> Doc AnsiStyle
+renderTokens vpc = mconcat . map renderTok
+  where
+    renderTok tok = case tok of
+
+      WhiteTok w -> renderWhite w
+
+      NumberTok i -> num (fromString i)
+      CharacterTok c -> char (fromString c)
+      StringTok s -> string (fromString s)
+
+      OpenBracket  -> ctrl "["
+      CloseBracket -> ctrl "]"
+      OpenParen    -> ctrl "("
+      CloseParen   -> ctrl ")"
+      OpenBrace    -> ctrl "{"
+      CloseBrace   -> ctrl "}"
+      Equal        -> ctrl "="
+
+      OperatorTok op -> optr (fromString op)
+      IdentifierTok c -> fromString c
+
+      Comma -> coma ","
+
+    -- Render whitespace (which might have newlines)
+    renderWhite :: String -> Doc AnsiStyle
+    renderWhite "" = mempty
+    renderWhite str = let (line, str') = span (/= '\n') str
+                      in fromString line <> hardline <> renderWhite str'
+
+    -- Useful annotations
+    num    = annotate (vpc_number    vpc)
+    char   = annotate (vpc_character vpc)
+    string = annotate (vpc_string    vpc)
+    ctrl   = annotate (vpc_control   vpc)
+    coma   = annotate (vpc_comma     vpc)
+    optr   = annotate (vpc_operator  vpc)
 
