@@ -11,7 +11,7 @@ This library will make your GHCi experience colourful in 3 steps:
      :set prompt      "λ> "
      :set prompt-cont "|> "
 
-     import qualified Text.PrettyPrint.GHCi.prettyPrintValue
+     import qualified Text.PrettyPrint.GHCi
      pprint = Text.PrettyPrint.GHCi.prettyPrintValue False
 
      -- Typing `:pretty` will turn on the pretty-printing
