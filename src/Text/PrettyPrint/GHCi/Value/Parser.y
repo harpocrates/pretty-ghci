@@ -58,7 +58,7 @@ prefix_apps :: { [Value] }
 -- A record field
 field :: { (Id, Value) }
     : identifier       '=' value       { ($1,               $3) }
-    | '(' operator ')' '=' value       { ("(" <> $2 <> ")", $5) }
+    | '(' operator ')' '=' value       { ("(" ++ $2 ++ ")", $5) }
 
 -- Non-empty list of reversed record fields
 fields :: { [(Id, Value)] }

@@ -2,7 +2,7 @@ cabal-version:       2.0
 
 name:                pretty-ghci
 version:             0.1.0.0
-synopsis:            Functions for beautifying GHCi
+synopsis:            Functionality for beautifying GHCi
 license:             BSD3
 license-file:        LICENSE
 author:              Alec Theriault
@@ -12,6 +12,16 @@ category:            Text
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
 
+executable pp-ghci
+  main-is:             Main.hs
+  build-depends:       base, pretty-ghci
+
+  other-modules:       Paths_pretty_ghci
+  autogen-modules:     Paths_pretty_ghci
+
+  hs-source-dirs:      driver
+  default-language:    Haskell2010
+
 library
   exposed-modules:     Text.PrettyPrint.GHCi
                        Text.PrettyPrint.GHCi.Haddock
@@ -20,15 +30,15 @@ library
                        Text.PrettyPrint.GHCi.Value.Parser
                        System.Terminal.Utils
 
-  build-tools:         alex >=3.1
+  build-tools:         alex  >=3.1
                      , happy >=1.19
 
-  build-depends:       base ^>=4.12.0.0
-                     , haddock-library ^>=1.7
+  build-depends:       base                        >=4.9 && <4.13
+                     , haddock-library             ^>=1.7
                      , prettyprinter-ansi-terminal ^>=1.1
-                     , prettyprinter ^>=1.2
-                     , text ^>=1.2
-                     , array >=0.5 && <0.6
+                     , prettyprinter               ^>=1.2
+                     , text                        ^>=1.2
+                     , array                       ^>=0.5
 
   hs-source-dirs:      src
   default-language:    Haskell2010
