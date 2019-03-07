@@ -1,10 +1,12 @@
 {
 module Text.PrettyPrint.GHCi.Value.Parser (
   parseValue,
-  Value(..),
+  Id, Op, Value(..),
 ) where
 
 import Text.PrettyPrint.GHCi.Value.Lexer
+
+import qualified Data.List.NonEmpty as N
 }
 
 %name parseTokens value
@@ -46,7 +48,7 @@ comma_values :: { [Value] }
 -- Prefix constructor application
 prefix :: { Value }
     : identifier prefix_apps           { Prefix $1 (reverse $2) }
-    | identifier '{' fields '}'        { Record $1 (reverse $3) }
+    | identifier '{' fields '}'        { Record $1 (N.reverse $3) }
     | atom                             { $1 }
 
 -- Reversed arguments to a prefix constructor
@@ -61,15 +63,15 @@ field :: { (Id, Value) }
     | '(' operator ')' '=' value       { ("(" ++ $2 ++ ")", $5) }
 
 -- Non-empty list of reversed record fields
-fields :: { [(Id, Value)] }
-    : field                            { [$1] }
-    | fields ',' field                 { $3 : $1 }
+fields :: { N.NonEmpty (Id, Value) }
+    : field                            { $1 N.:| [] }
+    | fields ',' field                 { N.cons $3 $1 }
 
 -- Infix constructor application
 infixes :: { Value }
-    : prefix infixes_sufs              { if null $2
-                                          then $1
-                                          else Infix $1 (reverse $2) }
+    : prefix infixes_sufs              { case $2 of
+                                           [] -> $1
+                                           x : xs -> Infix $1 (N.reverse (x N.:| xs)) }
 
 -- Reversed list of operator suffixes
 infixes_sufs :: { [(Op, Value)] }
@@ -94,8 +96,8 @@ type Op = String
 -- | A very simple representation of the output of 'Show'
 data Value
   = Prefix Id [Value]
-  | Infix Value [(Op, Value)] -- ^ INV: list is non-empty
-  | Record Id [(Id, Value)] -- ^ INV: list is non-empty
+  | Infix Value (N.NonEmpty (Op, Value))
+  | Record Id (N.NonEmpty (Id, Value))
   | Tuple [Value]
   | List [Value]
   | Num String  -- ^ integer or floating point

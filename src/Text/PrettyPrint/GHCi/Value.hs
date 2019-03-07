@@ -14,6 +14,7 @@ import System.Terminal.Utils
 import Data.String       ( fromString )
 import Control.Exception ( catch, ErrorCall )
 import System.IO         ( stdout )
+import qualified Data.List.NonEmpty as N
 
 -- prettyprinter, prettyprinter-ansi-terminal
 import Data.Text.Prettyprint.Doc
@@ -38,7 +39,7 @@ prettyPrintValue smarter str = do
 value2Doc :: String -> Doc AnsiStyle
 value2Doc shown = case parseValue shown of
                     Just v -> renderValue defaultValueConf v <> hardline
-                    Nothing -> renderTokens defaultValueConf tokens <> hardline
+                    Nothing -> renderTokens defaultValueConf tokens
   where
     tokens = lexTokens shown
 
@@ -92,15 +93,15 @@ renderValue vpc = renderVal
       -- Either everything goes on one line, or each argument gets its own
       -- line with operators at the beginning of the lines
       Infix arg0 ops ->
-        let tails = map (\(op,arg) -> optr (fromString op) <+> align (renderVal arg)) ops
-        in renderVal arg0 <> group (nest n (line <> align (vsep tails)))
+        let tails = fmap (\(op,arg) -> optr (fromString op) <+> align (renderVal arg)) ops
+        in renderVal arg0 <> group (nest n (line <> align (vsep (N.toList tails))))
 
       -- Either everything goes on one line or the constructor and fields each
       -- start on a new line (with fields indented)
       Record c vs ->
         let fields = zipWith (\l (f,x) -> hsep [ l, field (fromString f)
                                                , ctrl "=", align (renderVal x) ])
-                             (ctrl "{" : repeat (coma ",")) vs
+                             (ctrl "{" : repeat (coma ",")) (N.toList vs)
         in fromString c <> group (nest n (line <> align (vcat fields) <+> ctrl "}"))
       
       Paren x -> ctrl "(" <> align (renderVal x) <> ctrl ")"
@@ -154,8 +155,8 @@ renderTokens vpc = mconcat . map renderTok
     -- Render whitespace (which might have newlines)
     renderWhite :: String -> Doc AnsiStyle
     renderWhite "" = mempty
-    renderWhite str = let (line, str') = span (/= '\n') str
-                      in fromString line <> hardline <> renderWhite str'
+    renderWhite str = let (ln, str') = span (/= '\n') str
+                      in fromString ln <> hardline <> renderWhite (drop 1 str')
 
     -- Useful annotations
     num    = annotate (vpc_number    vpc)

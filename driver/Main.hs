@@ -9,12 +9,12 @@ import Paths_pretty_ghci          ( version )
 
 main :: IO ()
 main = do
-  args <- getArgs
+  argv <- getArgs
   usage <- getUsage
   let exitBad msg = die (msg ++ usage)
       exitGood msg = putStr msg >> exitSuccess
 
-  case getOpt Permute options args of
+  case getOpt Permute options argv of
     (_  , _, errs @ (_ : _)) -> exitBad (concat errs)
     (_  , args @ (_ : _), _) -> exitBad ("Unexpected arguments: " ++ unwords args)
     (opts, [], [])           -> do

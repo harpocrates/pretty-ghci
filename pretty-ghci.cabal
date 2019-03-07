@@ -10,7 +10,18 @@ maintainer:          alec.theriault@gmail.com
 copyright:           (c) Alec Theriault
 category:            Text
 build-type:          Simple
-extra-source-files:  CHANGELOG.md
+
+description:
+  Provides a library and an executable for parsing and pretty-printing the
+  output of derived @Show@ instances as well as Haddock docstrings. The idea is
+  to provide functionality that can be easily plugged into GHCi's
+  @-interactive-print@ option, making for a better REPL experience.
+
+extra-source-files:
+  .travis.yml
+  .gitignore
+  CHANGELOG.md
+  README.md
 
 executable pp-ghci
   main-is:             Main.hs
@@ -19,6 +30,7 @@ executable pp-ghci
   other-modules:       Paths_pretty_ghci
   autogen-modules:     Paths_pretty_ghci
 
+  ghc-options:         -Wall -Wcompat
   hs-source-dirs:      driver
   default-language:    Haskell2010
 
@@ -40,6 +52,7 @@ library
                      , text                        ^>=1.2
                      , array                       ^>=0.5
 
+  ghc-options:         -Wall -Wcompat
   hs-source-dirs:      src
   default-language:    Haskell2010
 
