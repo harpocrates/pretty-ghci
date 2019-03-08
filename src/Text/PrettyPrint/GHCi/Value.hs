@@ -31,7 +31,7 @@ prettyPrintValue smarter str = do
   let layoutOpts = LayoutOptions (AvailablePerLine (maybe 80 snd termSize) 1.0)
       layoutAlgo = if smarter then layoutSmart else layoutPretty
       rendered = layoutAlgo layoutOpts (value2Doc str)
-  renderIO stdout rendered `catch` \(_ :: ErrorCall) -> putStrLn str
+  renderIO stdout rendered `catch` \(_ :: ErrorCall) -> putStr str
 
 -- | Parse a shown value into a pretty 'Doc'. Can throw an error on outputs
 -- that could not be parsed properly, but should not throw errors for inputs
