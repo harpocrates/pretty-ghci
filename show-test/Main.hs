@@ -13,6 +13,8 @@ import System.Environment      ( getArgs )
 import System.FilePath         ( (</>), takeFileName )
 import System.Process          ( callProcess )
 
+import GHC.IO.Encoding         ( setLocaleEncoding, utf8 )
+
 -- | Option parser
 options :: [OptDescr Opt]
 options = [ Option []    ["accept"] (NoArg Accept) "accept the output"
@@ -48,6 +50,7 @@ main = do
         out = "show-test" </> "out" </> srcFile
         src = "show-test" </> "src" </> srcFile
 
+    setLocaleEncoding utf8
     inp <- readFile src
     let output = renderString (layoutPretty defaultLayoutOptions (value2Doc inp))
   
@@ -56,7 +59,7 @@ main = do
       then do writeFile ref output
       else do writeFile out output
               diff : _ <- catMaybes <$> traverse findExecutable ["colordiff", "diff"]
-              callProcess diff [ref, out]
+              callProcess diff ["--strip-trailing-cr", ref, out]
  
   -- Report status
   putStrLn $ "All " <> show (length srcs) <> " test cases " <> if accept then "accepted." else "passed."
