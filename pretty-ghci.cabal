@@ -22,6 +22,10 @@ extra-source-files:
   .gitignore
   CHANGELOG.md
   README.md
+  haddock-test/src/*.txt
+  haddock-test/ref/*.txt
+  show-test/src/*.txt
+  show-test/ref/*.txt
 
 tested-with:           GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.4
 
