@@ -57,7 +57,7 @@ main = do
       then do writeFile ref output
       else do writeFile out output
               diff : _ <- catMaybes <$> traverse findExecutable ["colordiff", "diff"]
-              callProcess diff [ref, out]
+              callProcess diff ["--strip-trailing-cr", ref, out]
  
   -- Report status
   putStrLn $ "All " <> show (length srcs) <> " test cases " <> if accept then "accepted." else "passed."

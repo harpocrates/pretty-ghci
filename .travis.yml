@@ -9,6 +9,10 @@ env:
   - GHCVER=8.6.4  CABALVER=2.4
   - GHCVER=head   CABALVER=head
 
+cache:
+  directories:
+    - "home/travis/.cabal/"
+
 # Allow for develop branch to break
 matrix:
   allow_failures:
@@ -23,7 +27,6 @@ before_install:
   - export PATH=$HOME/.cabal/bin:$PATH
   - travis_retry cabal v2-update
 
-# Install Happy and Alex first, before installing
 install:
   - echo $PATH
   - cabal --version
@@ -31,4 +34,5 @@ install:
   - cabal v2-configure --enable-tests
 
 script:
+  - cabal v2-build
   - cabal v2-test

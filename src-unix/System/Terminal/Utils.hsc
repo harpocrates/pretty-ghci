@@ -1,5 +1,15 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  System.Terminal.Utils
+-- Copyright   :  Alec Theriault 2019
+-- License     :  BSD3
+--
+-- Maintainer  :  alec.theriault@gmail.com
+-- Portability :  portable
+--
+-- Terminal-related utilities
 module System.Terminal.Utils (
   getTerminalSize,
 ) where
@@ -8,19 +18,11 @@ import Foreign
 import Foreign.C.Types
 import Foreign.Marshal.Alloc ( alloca )
 
-
--- | Try to get the number of rows and columns respectively in the terminal
-getTerminalSize :: IO (Maybe (Int,Int))
-
-#if defined(WINDOWS)
-
-getTerminalSize = pure Nothing
-
-#else
-
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+-- | Try to get the number of rows and columns respectively in the terminal
+getTerminalSize :: IO (Maybe (Int,Int))
 getTerminalSize = alloca $ \ws -> do
   res <- ioctl (#const STDOUT_FILENO) (#const TIOCGWINSZ) ws
   if res == -1
@@ -46,5 +48,3 @@ instance Storable WinSize where
   poke ptr (WinSize row col) = do
     (#poke struct winsize, ws_row) ptr row
     (#poke struct winsize, ws_col) ptr col
-
-#endif

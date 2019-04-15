@@ -1,4 +1,4 @@
-## `pretty-ghci` [![Build Status][0]][1] [![Hackage][2]][3]
+## `pretty-ghci` [![Travis Status][0]][1] [![Appveyor Status][4]][5] [![Hackage][2]][3]
 
 This library will make your GHCi experience colourful in 3 steps:
 
@@ -52,3 +52,5 @@ This library will make your GHCi experience colourful in 3 steps:
 [1]: https://travis-ci.org/harpocrates/pretty-ghci
 [2]: https://img.shields.io/hackage/v/pretty-ghci.svg
 [3]: https://hackage.haskell.org/package/pretty-ghci
+[4]: https://ci.appveyor.com/api/projects/status/qnbk7jblij7skb3l/branch/master?svg=true
+[5]: https://ci.appveyor.com/project/harpocrates/pretty-ghci/branch/master

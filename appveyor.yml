@@ -1,0 +1,28 @@
+# Clone location
+clone_folder: c:\pretty-ghci
+
+# Add new environments to the build here:
+environment:
+  matrix:
+    - GHCVER: 8.0.2
+    - GHCVER: 8.2.2
+    - GHCVER: 8.4.4
+    - GHCVER: 8.6.4
+
+cache:
+  - dist-newstyle
+  - "C:\\SR"
+
+# Manually install ghc and cabal
+install:
+  - choco install -y ghc --version %GHCVER%
+  - choco install -y cabal
+  - refreshenv
+  - cabal --version
+  - ghc --version
+  - cabal "--store-dir=C:\\SR" v2-update
+
+build_script:
+  - cabal "--store-dir=C:\\SR" v2-configure --enable-tests
+  - cabal "--store-dir=C:\\SR" v2-build
+  - cabal "--store-dir=C:\\SR" v2-test
