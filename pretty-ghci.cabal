@@ -1,7 +1,7 @@
 cabal-version:       2.0
 
 name:                pretty-ghci
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Functionality for beautifying GHCi
 license:             BSD3
 license-file:        LICENSE
@@ -48,8 +48,8 @@ library
                        Text.PrettyPrint.GHCi.Value.Parser
                        System.Terminal.Utils
 
-  build-tools:         alex  >=3.1
-                     , happy >=1.19
+  build-tools:         alex                        >=3.1
+                     , happy                       >=1.19
 
   build-depends:       base                        >=4.9 && <4.13
                      , haddock-library             ^>=1.7
