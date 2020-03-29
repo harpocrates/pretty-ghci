@@ -18,7 +18,7 @@ import qualified Data.List.NonEmpty as N
        character  { CharacterTok $$ }
        operator   { OperatorTok $$ }
        identifier { IdentifierTok $$ }
-       '('        { OpenParen } 
+       '('        { OpenParen }
        ')'        { CloseParen }
        '['        { OpenBracket }
        ']'        { CloseBracket }

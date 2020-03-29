@@ -33,7 +33,7 @@ main = do
     (_, _, errs @ (_:_)) -> ioError (userError (concat errs                          ++ usageInfo header options))
     (_, non @ (_:_), []) -> ioError (userError ("Unexpected options: " ++ concat non ++ usageInfo header options))
     (opts, [], [])
-      | Help `elem` opts -> ioError (userError (                                        usageInfo header options)) 
+      | Help `elem` opts -> ioError (userError (                                        usageInfo header options))
       | Accept `elem` opts -> pure True
       | otherwise -> pure False
 
@@ -41,7 +41,7 @@ main = do
   srcs <- listDirectory ("show-test" </> "src")
   createDirectoryIfMissing True ("show-test" </> "out")
   createDirectoryIfMissing True ("show-test" </> "ref")
-  
+
   -- Run them in a loop
   for_ srcs $ \srcFile -> do
     putStrLn $ "Checking " ++ srcFile ++ "..."
@@ -53,14 +53,14 @@ main = do
     setLocaleEncoding utf8
     inp <- readFile src
     let output = renderString (layoutPretty defaultLayoutOptions (value2Doc inp))
-  
+
     -- Accept or test
     if accept
       then do writeFile ref output
       else do writeFile out output
               diff : _ <- catMaybes <$> traverse findExecutable ["colordiff", "diff"]
               callProcess diff ["--strip-trailing-cr", ref, out]
- 
+
   -- Report status
   putStrLn $ "All " <> show (length srcs) <> " test cases " <> if accept then "accepted." else "passed."
 

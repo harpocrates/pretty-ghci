@@ -47,13 +47,13 @@ value2Doc shown = case parseValue shown of
 -- | A Good Enough colour scheme
 defaultValueConf :: ValuePrintConf
 defaultValueConf = ValuePrintConf
-  { vpc_number    = color Cyan 
+  { vpc_number    = color Cyan
   , vpc_character = color Blue
   , vpc_string    = color Green
   , vpc_control   = bold <> color Magenta
   , vpc_comma     = color Yellow
   , vpc_operator  = color White
-  , vpc_field     = italicized <> colorDull Red 
+  , vpc_field     = italicized <> colorDull Red
   , vpc_indent    = 2
   }
 
@@ -79,17 +79,17 @@ renderValue vpc = renderVal
       Num i -> num (fromString i)
       Char c -> char (fromString c)
       Str s -> string (fromString s)
-      
+
       List vs  -> renderSeq (ctrl "[") (map (align . renderVal) vs) (ctrl "]")
       Tuple vs -> renderSeq (ctrl "(") (map (align . renderVal) vs) (ctrl ")")
-      
+
       -- Either everything goes on one line or the constructor and args each
       -- start on a new line (with args indented)
       Prefix c [] -> fromString c
       Prefix c vs ->
         let args = map (align . renderVal) vs
         in fromString c <> group (nest n (line <> align (vsep args)))
-     
+
       -- Either everything goes on one line, or each argument gets its own
       -- line with operators at the beginning of the lines
       Infix arg0 ops ->
@@ -103,7 +103,7 @@ renderValue vpc = renderVal
                                                , ctrl "=", align (renderVal x) ])
                              (ctrl "{" : repeat (coma ",")) (N.toList vs)
         in fromString c <> group (nest n (line <> align (vcat fields) <+> ctrl "}"))
-      
+
       Paren x -> ctrl "(" <> align (renderVal x) <> ctrl ")"
 
     -- Haskell style formatting of sequence-like things, with the comma at the
