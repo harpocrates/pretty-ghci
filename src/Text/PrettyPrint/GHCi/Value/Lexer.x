@@ -24,7 +24,7 @@ $hexit     = [$decdigit A-F a-f]
 @bin_exponent = @numspc [pP] [\-\+]? @decimal
 
 @floating_point = @numspc @decimal \. @decimal @exponent? | @numspc @decimal @exponent
-@hex_floating_point = ( @numspc @hexadecimal \. @hexadecimal @bin_exponent? 
+@hex_floating_point = ( @numspc @hexadecimal \. @hexadecimal @bin_exponent?
                       | @numspc @hexadecimal @bin_exponent
                       )
 
@@ -61,24 +61,24 @@ $sym_op_char  = ~[ $white \[ \] \( \) \{ \} \, \" \' \= ]
 tokens :-
 
     $white+        { WhiteTok }
-    
+
     "("            { const OpenParen }
     ")"            { const CloseParen }
-    
+
     "["            { const OpenBracket }
     "]"            { const CloseBracket }
-    
+
     "{"            { const OpenBrace }
     "}"            { const CloseBrace }
-    
+
     ","            { const Comma }
     "="            { const Equal }
-   
+
     @decimal       { NumberTok }
     @number        { NumberTok }
     @character     { CharacterTok }
     @string        { StringTok }
-    
+
     @sym_op        { operatorOrSymbol }
 
 {
@@ -88,7 +88,7 @@ tokens :-
 lexTokens :: String -> [Token]
 lexTokens = alexScanTokens
 
--- | Our somewhat simplified version of GHC Haskell tokens 
+-- | Our somewhat simplified version of GHC Haskell tokens
 data Token
   = WhiteTok      String
   | NumberTok     String
@@ -108,7 +108,7 @@ data Token
   | Equal
   deriving (Eq, Show)
 
--- | Classify a string as either an operator or an identifier 
+-- | Classify a string as either an operator or an identifier
 operatorOrSymbol :: String -> Token
 operatorOrSymbol str
   | all isOperatorLike str = OperatorTok str

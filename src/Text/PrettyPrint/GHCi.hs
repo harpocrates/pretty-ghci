@@ -3,7 +3,7 @@ module Text.PrettyPrint.GHCi (
   prettyPrintValue, value2Doc,
   ValuePrintConf(..),
   defaultValueConf,
- 
+
   -- * Interactive doc string printing
   prettyPrintHaddock, haddock2Doc,
   HaddockPrintConf(..),

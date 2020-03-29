@@ -41,7 +41,8 @@ haddock2Doc :: String -> Doc AnsiStyle
 haddock2Doc doc = (blocksToDoc blks <> hardline)
   where
     MetaDoc { _doc = parsedDoc } = parseParas Nothing doc
-    blks = getAsBlocks $ markup (terminalMarkup defaultHaddockConf) parsedDoc
+    parsedDoc' = overIdentifier (\_ns ident -> Just ident) parsedDoc
+    blks = getAsBlocks $ markup (terminalMarkup defaultHaddockConf) parsedDoc'
 
 
 -- | A Good Enough colour scheme
@@ -81,7 +82,7 @@ data HaddockPrintConf = HaddockPrintConf
 
   , hpc_math :: AnsiStyle
   -- ^ @\\( ... \\)@ and @\\[ ... \\]@ delimited math
-  
+
   , hpc_links :: AnsiStyle
   -- ^ the link part of hyperlinks or images
 
@@ -110,7 +111,7 @@ blocksToDoc :: [Doc AnsiStyle] -> Doc AnsiStyle
 blocksToDoc = align . vcat . punctuate hardline
 
 -- | Markup for turning a 'DocH' into a 'RenderedDocH'
-terminalMarkup :: HaddockPrintConf -> DocMarkupH Void Identifier RenderedDocH
+terminalMarkup :: HaddockPrintConf -> DocMarkupH Void String RenderedDocH
 terminalMarkup hpc = Markup
   { markupEmpty = RDH { getAsBlocks = []
                       , getAsInline = mempty }
@@ -130,7 +131,7 @@ terminalMarkup hpc = Markup
 
   , markupAppend = \(RDH b1 i1) (RDH b2 i2) -> RDH (b1 ++ b2) (i1 <> i2)
 
-  , markupIdentifier = \(_,idnt,_) -> onlyInline $ \_ -> ident (fromString idnt)
+  , markupIdentifier = \idnt       -> onlyInline $ \_ -> ident (fromString idnt)
   , markupModule     = \mdl        -> onlyInline $ \_ -> ident (fromString mdl)
   , markupAName      = \anc        -> onlyInline $ \_ -> ident (fromString anc)
 
@@ -139,7 +140,7 @@ terminalMarkup hpc = Markup
   , markupEmphasis   = \doc        -> onlyInline (emph   . getAsInline doc)
   , markupBold       = \doc        -> onlyInline (bolded . getAsInline doc)
   , markupMonospaced = \doc        -> onlyInline (mono   . getAsInline doc)
-    
+
   , markupWarning = \doc ->
       onlyBlock (warn (getAsInline doc True))
 
@@ -158,7 +159,8 @@ terminalMarkup hpc = Markup
   -- Render markdown-style only when we have a title
   , markupHyperlink = \(Hyperlink uri titleOpt) -> onlyInline $ \_ -> case titleOpt of
       Nothing    -> ctrl "<" <> link (fromString uri) <> ctrl ">"
-      Just title -> ctrl "[" <> fromString title <> ctrl "](" <> link (fromString uri) <> ctrl ")"
+      Just title -> let title' = getAsInline title True
+                    in ctrl "[" <> title' <> ctrl "](" <> link (fromString uri) <> ctrl ")"
 
   -- Render markdown-style only when we have a title
   , markupPic = \(Picture uri titleOpt) -> onlyInline $ \_ -> case titleOpt of

@@ -40,7 +40,7 @@ data WinSize = WinSize CUShort CUShort
 
 instance Storable WinSize where
   sizeOf _ = (#size struct winsize)
-  alignment _ = (#alignment struct winsize) 
+  alignment _ = (#alignment struct winsize)
   peek ptr = do
     row <- (#peek struct winsize, ws_row) ptr
     col <- (#peek struct winsize, ws_col) ptr

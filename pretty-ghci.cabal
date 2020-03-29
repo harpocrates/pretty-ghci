@@ -27,7 +27,7 @@ extra-source-files:
   show-test/src/*.txt
   show-test/ref/*.txt
 
-tested-with:           GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.4
+tested-with:           GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.5, GHC==8.8.3
 
 executable pp-ghci
   main-is:             Main.hs
@@ -48,13 +48,13 @@ library
                        Text.PrettyPrint.GHCi.Value.Parser
                        System.Terminal.Utils
 
-  build-tools:         alex                        >=3.1
-                     , happy                       >=1.19
+  build-tool-depends:  alex:alex                   >=3.1
+                     , happy:happy                 >=1.19
 
-  build-depends:       base                        >=4.9 && <4.13
-                     , haddock-library             ^>=1.7
+  build-depends:       base                        >=4.9 && <4.15
+                     , haddock-library             ^>=1.8
                      , prettyprinter-ansi-terminal ^>=1.1
-                     , prettyprinter               ^>=1.2
+                     , prettyprinter               ^>=1.6
                      , text                        ^>=1.2
                      , array                       ^>=0.5
 

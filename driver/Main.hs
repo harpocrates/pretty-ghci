@@ -1,6 +1,6 @@
 
 import Data.Version               ( showVersion )
-import System.Environment         ( getArgs, getProgName ) 
+import System.Environment         ( getArgs, getProgName )
 import System.Exit                ( die, exitSuccess )
 import System.Console.GetOpt
 

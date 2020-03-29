@@ -3,10 +3,11 @@ sudo: true
 
 # Add new environments to the build here:
 env:
-  - GHCVER=8.0.2  CABALVER=2.4
-  - GHCVER=8.2.2  CABALVER=2.4
-  - GHCVER=8.4.4  CABALVER=2.4
-  - GHCVER=8.6.4  CABALVER=2.4
+  - GHCVER=8.0.2  CABALVER=3.0
+  - GHCVER=8.2.2  CABALVER=3.0
+  - GHCVER=8.4.4  CABALVER=3.0
+  - GHCVER=8.6.5  CABALVER=3.0
+  - GHCVER=8.8.3  CABALVER=3.0
   - GHCVER=head   CABALVER=head
 
 cache:
