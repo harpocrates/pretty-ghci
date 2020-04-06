@@ -27,7 +27,12 @@ extra-source-files:
   show-test/src/*.txt
   show-test/ref/*.txt
 
-tested-with:           GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.5, GHC==8.8.3
+tested-with:           GHC==8.0.2
+                     , GHC==8.2.2
+                     , GHC==8.4.4
+                     , GHC==8.6.5
+                     , GHC==8.8.3
+                     , GHC==8.10.1
 
 executable pp-ghci
   main-is:             Main.hs
@@ -52,7 +57,7 @@ library
                      , happy:happy                 >=1.19
 
   build-depends:       base                        >=4.9 && <4.15
-                     , haddock-library             ^>=1.8
+                     , haddock-library             ^>=1.9
                      , prettyprinter-ansi-terminal ^>=1.1
                      , prettyprinter               ^>=1.6
                      , text                        ^>=1.2
